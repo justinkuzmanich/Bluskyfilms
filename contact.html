@@ -527,31 +527,8 @@
   </div>
 
   <script>
-    const PIPELINE_OWNER_ID = '48218afa-906b-44ed-903c-fb4dcc6473aa';
-
-    const SUPABASE_URL = 'https://xhuumecxmvwphtxanlai.supabase.co';
+    const CONTACT_FORM_ENDPOINT = 'https://xhuumecxmvwphtxanlai.supabase.co/functions/v1/contact-form-submit';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodXVtZWN4bXZ3cGh0eGFubGFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTk1NjksImV4cCI6MjA5MjU3NTU2OX0.2mZ8hiTrhGbLcz4h5B9FjjXxk9g5mAiVNe1nS0uCPKY';
-
-    const SERVICE_TO_DEAL_TYPE = {
-      'listing-video': 'listing-video',
-      'social-retainer': 'social-video',
-      'paid-ads': 'ads',
-      'bundle': 'ads'
-    };
-
-    const SERVICE_TO_VALUE = {
-      'listing-video': 999,
-      'social-retainer': 2250,
-      'paid-ads': 0,
-      'bundle': 0
-    };
-
-    function makeNoteId() {
-      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-        return window.crypto.randomUUID();
-      }
-      return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    }
 
     async function handleSubmit(e) {
       e.preventDefault();
@@ -561,39 +538,19 @@
       const errorEl = document.getElementById('formError');
 
       const data = new FormData(form);
-      const name = (data.get('name') || '').toString().trim();
-      const email = (data.get('email') || '').toString().trim();
-      const phone = (data.get('phone') || '').toString().trim();
       const serviceValue = (data.get('service') || '').toString();
       const serviceOption = form.querySelector('#service option[value="' + serviceValue + '"]');
       const serviceLabel = serviceOption ? serviceOption.textContent.trim() : '';
-      const shootDate = (data.get('shootDate') || '').toString().trim();
-      const address = (data.get('address') || '').toString().trim();
-      const message = (data.get('message') || '').toString().trim();
-
-      const noteParts = [];
-      if (serviceLabel) noteParts.push('Service: ' + serviceLabel);
-      if (shootDate) noteParts.push('Shoot date: ' + shootDate);
-      if (address) noteParts.push('Address: ' + address);
-      if (message) noteParts.push('Message: ' + message);
-      const noteText = noteParts.join(' • ');
 
       const payload = {
-        user_id: PIPELINE_OWNER_ID,
-        stage: 0,
-        name: name,
-        email: email,
-        phone: phone,
-        business: '',
-        deal_type: SERVICE_TO_DEAL_TYPE[serviceValue] || 'other',
-        value: SERVICE_TO_VALUE[serviceValue] || 0,
-        status: 'active',
-        notes: [{
-          id: makeNoteId(),
-          text: noteText,
-          ts: Date.now(),
-          stage: 'Prospect'
-        }]
+        name: (data.get('name') || '').toString().trim(),
+        email: (data.get('email') || '').toString().trim(),
+        phone: (data.get('phone') || '').toString().trim(),
+        service_label: serviceLabel,
+        service_value: serviceValue,
+        shootDate: (data.get('shootDate') || '').toString().trim(),
+        address: (data.get('address') || '').toString().trim(),
+        message: (data.get('message') || '').toString().trim()
       };
 
       const originalLabel = btn.textContent;
@@ -603,20 +560,20 @@
       errorEl.textContent = '';
 
       try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/deals', {
+        const res = await fetch(CONTACT_FORM_ENDPOINT, {
           method: 'POST',
           headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
             'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'apikey': SUPABASE_ANON_KEY
           },
           body: JSON.stringify(payload)
         });
 
-        if (res.status !== 201) {
-          const errText = await res.text().catch(() => '');
-          throw new Error('HTTP ' + res.status + ' ' + errText);
+        const result = await res.json().catch(() => ({}));
+
+        if (!res.ok || !result.ok) {
+          throw new Error(result.error || ('HTTP ' + res.status));
         }
 
         form.style.opacity = '0';
