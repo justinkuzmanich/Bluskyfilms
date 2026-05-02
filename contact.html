@@ -528,7 +528,6 @@
 
   <script>
     const CONTACT_FORM_ENDPOINT = 'https://xhuumecxmvwphtxanlai.supabase.co/functions/v1/contact-form-submit';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodXVtZWN4bXZ3cGh0eGFubGFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTk1NjksImV4cCI6MjA5MjU3NTU2OX0.2mZ8hiTrhGbLcz4h5B9FjjXxk9g5mAiVNe1nS0uCPKY';
 
     async function handleSubmit(e) {
       e.preventDefault();
@@ -563,9 +562,7 @@
         const res = await fetch(CONTACT_FORM_ENDPOINT, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-            'apikey': SUPABASE_ANON_KEY
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(payload)
         });
