@@ -447,15 +447,9 @@
 
       <form class="form" id="contactForm" onsubmit="handleSubmit(event)">
 
-        <div class="form-row">
-          <div class="field">
-            <label for="firstName">First Name</label>
-            <input type="text" id="firstName" name="firstName" placeholder="Justin" required>
-          </div>
-          <div class="field">
-            <label for="lastName">Last Name</label>
-            <input type="text" id="lastName" name="lastName" placeholder="Kuzmanich" required>
-          </div>
+        <div class="field">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" name="name" placeholder="Your name" required>
         </div>
 
         <div class="field">
@@ -477,6 +471,11 @@
             <option value="paid-ads">Paid Ad Campaign — Custom</option>
             <option value="bundle">Video + Ads Bundle — Custom</option>
           </select>
+        </div>
+
+        <div class="field">
+          <label for="shootDate">Requested Shoot Date</label>
+          <input type="date" id="shootDate" name="shootDate" required>
         </div>
 
         <div class="field">
