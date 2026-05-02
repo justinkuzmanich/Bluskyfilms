@@ -536,7 +536,14 @@
       'listing-video': 'video',
       'social-retainer': 'social',
       'paid-ads': 'ads',
-      'bundle': 'video'
+      'bundle': 'ads'
+    };
+
+    const SERVICE_TO_VALUE = {
+      'listing-video': 999,
+      'social-retainer': 2250,
+      'paid-ads': 0,
+      'bundle': 0
     };
 
     function makeNoteId() {
@@ -579,7 +586,7 @@
         phone: phone,
         business: '',
         deal_type: SERVICE_TO_DEAL_TYPE[serviceValue] || 'other',
-        value: 0,
+        value: SERVICE_TO_VALUE[serviceValue] || 0,
         status: 'active',
         notes: [{
           id: makeNoteId(),
