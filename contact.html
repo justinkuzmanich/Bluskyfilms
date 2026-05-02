@@ -332,6 +332,24 @@
       line-height: 1.6;
     }
 
+    .form-error {
+      display: none;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.84rem;
+      color: #e6a3a3;
+      background: rgba(224,141,141,0.08);
+      border: 1px solid rgba(224,141,141,0.25);
+      padding: 14px 18px;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     /* SUCCESS STATE */
     .success-state {
       display: none;
@@ -488,7 +506,8 @@
           <textarea id="message" name="message" placeholder="Preferred shoot date, listing price, special features..."></textarea>
         </div>
 
-        <button type="submit" class="submit-btn">Request a Shoot →</button>
+        <p class="form-error" id="formError" role="alert"></p>
+        <button type="submit" class="submit-btn" id="submitBtn">Request a Shoot →</button>
         <p class="form-note">We'll confirm your date and all details by email within one business day.</p>
 
       </form>
@@ -508,16 +527,105 @@
   </div>
 
   <script>
-    function handleSubmit(e) {
+    // Replace with the user's Supabase auth UUID before going live — submissions will fail until this is filled in.
+    const PIPELINE_OWNER_ID = 'OWNER_USER_ID_PLACEHOLDER';
+
+    const SUPABASE_URL = 'https://xhuumecxmvwphtxanlai.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodXVtZWN4bXZ3cGh0eGFubGFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTk1NjksImV4cCI6MjA5MjU3NTU2OX0.2mZ8hiTrhGbLcz4h5B9FjjXxk9g5mAiVNe1nS0uCPKY';
+
+    const SERVICE_TO_DEAL_TYPE = {
+      'listing-video': 'video',
+      'social-retainer': 'social',
+      'paid-ads': 'ads',
+      'bundle': 'video'
+    };
+
+    function makeNoteId() {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+      }
+      return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    async function handleSubmit(e) {
       e.preventDefault();
       const form = document.getElementById('contactForm');
       const success = document.getElementById('successState');
-      form.style.opacity = '0';
-      form.style.transition = 'opacity 0.4s';
-      setTimeout(() => {
-        form.style.display = 'none';
-        success.classList.add('visible');
-      }, 400);
+      const btn = document.getElementById('submitBtn');
+      const errorEl = document.getElementById('formError');
+
+      const data = new FormData(form);
+      const name = (data.get('name') || '').toString().trim();
+      const email = (data.get('email') || '').toString().trim();
+      const phone = (data.get('phone') || '').toString().trim();
+      const serviceValue = (data.get('service') || '').toString();
+      const serviceOption = form.querySelector('#service option[value="' + serviceValue + '"]');
+      const serviceLabel = serviceOption ? serviceOption.textContent.trim() : '';
+      const shootDate = (data.get('shootDate') || '').toString().trim();
+      const address = (data.get('address') || '').toString().trim();
+      const message = (data.get('message') || '').toString().trim();
+
+      const noteParts = [];
+      if (serviceLabel) noteParts.push('Service: ' + serviceLabel);
+      if (shootDate) noteParts.push('Shoot date: ' + shootDate);
+      if (address) noteParts.push('Address: ' + address);
+      if (message) noteParts.push('Message: ' + message);
+      const noteText = noteParts.join(' • ');
+
+      const payload = {
+        user_id: PIPELINE_OWNER_ID,
+        stage: 0,
+        name: name,
+        email: email,
+        phone: phone,
+        business: '',
+        deal_type: SERVICE_TO_DEAL_TYPE[serviceValue] || 'other',
+        value: 0,
+        status: 'active',
+        notes: [{
+          id: makeNoteId(),
+          text: noteText,
+          ts: Date.now(),
+          stage: 'Prospect'
+        }]
+      };
+
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+
+      try {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/deals', {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.status !== 201) {
+          const errText = await res.text().catch(() => '');
+          throw new Error('HTTP ' + res.status + ' ' + errText);
+        }
+
+        form.style.opacity = '0';
+        form.style.transition = 'opacity 0.4s';
+        setTimeout(() => {
+          form.style.display = 'none';
+          success.classList.add('visible');
+        }, 400);
+      } catch (err) {
+        console.error('Contact form submission failed:', err);
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+        errorEl.textContent = "Sorry — something went wrong sending your request. Please try again, or email us directly.";
+        errorEl.style.display = 'block';
+      }
     }
   </script>
 
